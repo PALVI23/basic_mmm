@@ -6,6 +6,8 @@ import io
 import plotly.express as px
 import os
 
+BACKEND_URL = os.getenv("BACKEND_URL", "http://127.0.0.1:8000")
+
 st.set_page_config(layout="wide")
 st.title("Layered Market Mix Modeling")
 
@@ -39,7 +41,6 @@ if uploaded_file is not None:
         uploaded_file.seek(0)
         with st.spinner("Processing data and training models..."):
             files = {'file': (uploaded_file.name, uploaded_file.getvalue(), 'text/csv')}
-            BACKEND_URL = os.getenv("BACKEND_URL", "http://127.0.0.1:8000")
             response = requests.post(f"{BACKEND_URL}/upload_and_process/", files=files)
 
             if response.status_code == 200:
