@@ -4,6 +4,7 @@ import pandas as pd
 import requests
 import io
 import plotly.express as px
+import os
 
 st.set_page_config(layout="wide")
 st.title("Layered Market Mix Modeling")
@@ -38,7 +39,8 @@ if uploaded_file is not None:
         uploaded_file.seek(0)
         with st.spinner("Processing data and training models..."):
             files = {'file': (uploaded_file.name, uploaded_file.getvalue(), 'text/csv')}
-            response = requests.post("http://127.0.0.1:8000/upload_and_process/", files=files)
+            BACKEND_URL = os.getenv("BACKEND_URL", "http://127.0.0.1:8000")
+            response = requests.post(f"{BACKEND_URL}/upload_and_process/", files=files)
 
             if response.status_code == 200:
                 st.success("Processing and training complete!")
@@ -51,7 +53,7 @@ if uploaded_file is not None:
 
 if st.session_state.data_uploaded:
     st.header("2. Overall Portfolio Analysis")
-    summary_response = requests.get("http://127.0.0.1:8000/get_all_sku_summary/")
+    summary_response = requests.get(f"{BACKEND_URL}/get_all_sku_summary/")
     if summary_response.status_code == 200:
         summary_data = summary_response.json()
         summary_df = pd.DataFrame(summary_data)
@@ -78,7 +80,7 @@ if st.session_state.data_uploaded:
             selected_sku = sku_input
             # --- Historical Data Visualization ---
             st.subheader(f"Historical Performance for {selected_sku}")
-            hist_response = requests.get(f"http://127.0.0.1:8000/get_historical_data/{selected_sku}")
+            hist_response = requests.get(f"{BACKEND_URL}/get_historical_data/{selected_sku}")
             if hist_response.status_code == 200:
                 hist_data = hist_response.json()
                 hist_df = pd.DataFrame(hist_data)
@@ -99,7 +101,7 @@ if st.session_state.data_uploaded:
 
             # --- Interactive Prediction ---
             st.subheader(f"Simulate Sales")
-            avg_spend_response = requests.get(f"http://127.0.0.1:8000/get_average_spend/{selected_sku}")
+            avg_spend_response = requests.get(f"{BACKEND_URL}/get_average_spend/{selected_sku}")
             avg_spend = avg_spend_response.json().get('average_spend', {})
 
             sim_tv_spend = st.slider("TV Spend", 0, 500000, int(avg_spend.get('TV_Spend', 100000)))
@@ -108,7 +110,7 @@ if st.session_state.data_uploaded:
 
             # --- Dynamic Prediction Call ---
             spend_data = {'sku': selected_sku, 'spend_data': {'TV_Spend': sim_tv_spend, 'Digital_Spend': sim_digital_spend, 'Print_Spend': sim_print_spend}}
-            prediction_response = requests.post("http://127.0.0.1:8000/predict/", json=spend_data)
+            prediction_response = requests.post(f"{BACKEND_URL}/predict/", json=spend_data)
 
             if prediction_response.status_code == 200:
                 prediction = prediction_response.json()['prediction_breakdown']
